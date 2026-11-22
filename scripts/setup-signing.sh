@@ -14,8 +14,15 @@ SECRET_DIR="$HOME/.config/interspace"
 SECRET_FILE="$SECRET_DIR/signing-keychain-password"
 OPENSSL=/usr/bin/openssl # LibreSSL: writes a PKCS#12 file that `security import` can read
 
+# codesign --keychain finds the identity only in a keychain on the user's search list.
+add_to_search_list() {
+    security list-keychains -d user | grep -q "$KEYCHAIN" ||
+        security list-keychains -d user -s $(security list-keychains -d user | tr -d '"') "$KEYCHAIN"
+}
+
 if [ -f "$KEYCHAIN" ] && [ -f "$SECRET_FILE" ] &&
    security find-identity -v -p codesigning "$KEYCHAIN" 2>/dev/null | grep -q "$IDENTITY"; then
+    add_to_search_list
     echo "Signing identity already exists."
     exit 0
 fi
@@ -55,5 +62,6 @@ security import "$WORK/identity.p12" -k "$KEYCHAIN" -P "$PASSWORD" -T /usr/bin/c
 security set-key-partition-list -S apple-tool:,apple: -s -k "$PASSWORD" "$KEYCHAIN" >/dev/null
 # codesign takes only a trusted identity. Asks for the login password once.
 security add-trusted-cert -r trustRoot -p codeSign -k "$KEYCHAIN" "$WORK/cert.pem"
+add_to_search_list
 
 echo "Created signing identity \"$IDENTITY\" in $KEYCHAIN"
