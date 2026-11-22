@@ -15,7 +15,7 @@ SECRET_FILE="$SECRET_DIR/signing-keychain-password"
 OPENSSL=/usr/bin/openssl # LibreSSL: writes a PKCS#12 file that `security import` can read
 
 if [ -f "$KEYCHAIN" ] && [ -f "$SECRET_FILE" ] &&
-   security find-identity -p codesigning "$KEYCHAIN" 2>/dev/null | grep -q "$IDENTITY"; then
+   security find-identity -v -p codesigning "$KEYCHAIN" 2>/dev/null | grep -q "$IDENTITY"; then
     echo "Signing identity already exists."
     exit 0
 fi
@@ -53,5 +53,7 @@ security unlock-keychain -p "$PASSWORD" "$KEYCHAIN"
 security import "$WORK/identity.p12" -k "$KEYCHAIN" -P "$PASSWORD" -T /usr/bin/codesign >/dev/null
 # Lets codesign use the key with no prompt.
 security set-key-partition-list -S apple-tool:,apple: -s -k "$PASSWORD" "$KEYCHAIN" >/dev/null
+# codesign takes only a trusted identity. Asks for the login password once.
+security add-trusted-cert -r trustRoot -p codeSign -k "$KEYCHAIN" "$WORK/cert.pem"
 
 echo "Created signing identity \"$IDENTITY\" in $KEYCHAIN"
