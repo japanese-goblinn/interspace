@@ -280,7 +280,7 @@ struct TransitionPreview: View {
         let faceRadius = Self.cornerRadius / width
 
         // The sides that face the eye, the furthest first.
-        let sides = (0..<3)
+        let sides: [(index: Int, offset: CGFloat)] = (0..<3)
             .map { (index: $0, offset: CGFloat($0) - progress) }
             .filter { abs($0.offset) * TransitionMath.hexFaceAngle < .pi / 2 }
             .sorted { abs($0.offset) > abs($1.offset) }
